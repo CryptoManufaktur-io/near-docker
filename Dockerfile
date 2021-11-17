@@ -2,7 +2,7 @@ FROM debian:bullseye-slim
 
 ARG USER=near
 ARG UID=10000
-ARG CHAIN_ID=mainnet
+ARG CHAIN=mainnet
 
 ENV NEAR_DEPLOY_URL=https://s3-us-west-1.amazonaws.com/build.nearprotocol.com
 
@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 RUN set -eu \
-  && latest_release=$(curl -L ${NEAR_DEPLOY_URL}/nearcore-deploy/${CHAIN_ID}/latest_release) \
-  && latest_deploy=$(curl -L ${NEAR_DEPLOY_URL}/nearcore-deploy/${CHAIN_ID}/latest_deploy) \
+  && latest_release=$(curl -L ${NEAR_DEPLOY_URL}/nearcore-deploy/${CHAIN}/latest_release) \
+  && latest_deploy=$(curl -L ${NEAR_DEPLOY_URL}/nearcore-deploy/${CHAIN}/latest_deploy) \
   && curl -L ${NEAR_DEPLOY_URL}/nearcore/Linux/${latest_release}/${latest_deploy}/neard -o /usr/local/bin/neard \
   && chmod +x /usr/local/bin/neard \
   && neard -V
