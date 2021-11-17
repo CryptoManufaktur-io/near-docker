@@ -41,7 +41,8 @@ services:
             echo "Downloading chain data from: ${FAST_SYNC_URL} ..."
             {
               curl -s -L ${FAST_SYNC_URL} -o /var/lib/near/data.tar &&
-              tar -xf /var/lib/near/data.tar &&
+              mkdir -m 0700 -p /var/lib/near/data &&
+              tar -xf /var/lib/near/data.tar -C /var/lib/near/data &&
               rm /var/lib/near/data.tar
             } || { "Error downloading initial state, please try again"; exit 1; }
          fi
