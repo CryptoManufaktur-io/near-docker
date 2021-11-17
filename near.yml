@@ -1,0 +1,62 @@
+# NEAR node
+version: "3.4"
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 20m
+      max-file: "3"
+
+services:
+  near:
+    build:
+      context: .
+      args:
+        - CHAIN=${CHAIN}
+    image: near:local
+    restart: unless-stopped
+    volumes:
+      - near-data:/var/lib/near
+      - ./logs:/logs
+        #- /etc/timezone:/etc/timezone:ro
+        #- /etc/localtime:/etc/localtime:ro
+    ports:
+      - 24567:24567/tcp
+    <<: *logging
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - | 
+        set -u
+        if [ ! -f /var/lib/near/setupdone ]; then
+          echo "Initializing NEAR node..."
+
+          neard --home /var/lib/near init --chain-id ${CHAIN} --download-genesis --download-config ||
+          { echo "Error initializing node, please try again"; exit 1; }
+
+          curl -s -L $${NEAR_DEPLOY_URL}/nearcore-deploy/${CHAIN}/config.json -o /var/lib/near/config.json ||
+          { echo "Error downloading configuration, please try again"; exit 1; }
+
+          if [ "${FAST_SYNC_URL}" !=  "" ]; then
+            echo "Downloading chain data from: ${FAST_SYNC_URL} ..."
+            {
+              curl -s -L ${FAST_SYNC_URL} -o /var/lib/near/data.tar &&
+              tar -xf /var/lib/near/data.tar &&
+              rm /var/lib/near/data.tar
+            } || { "Error downloading initial state, please try again"; exit 1; }
+         fi
+
+          touch /var/lib/near/setupdone
+        fi
+        exec neard --home /var/lib/near run
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ec.service=ec
+      - traefik.http.routers.ec.entrypoints=websecure
+      - traefik.http.routers.ec.rule=Host(`${EC_HOST}.${DOMAIN}`)
+      - traefik.http.routers.eclb.service=ec
+      - traefik.http.routers.eclb.entrypoints=websecure
+      - traefik.http.routers.eclb.rule=Host(`${EC_LB}.${DOMAIN}`)
+      - traefik.http.services.ec.loadbalancer.server.port=${EC_RPC_PORT}
+
+volumes:
+  near-data:
