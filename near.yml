@@ -45,7 +45,7 @@ services:
               tar -xf /var/lib/near/data.tar -C /var/lib/near/data &&
               rm /var/lib/near/data.tar
             } || { "Error downloading initial state, please try again"; exit 1; }
-         fi
+          fi
 
           touch /var/lib/near/setupdone
         fi
